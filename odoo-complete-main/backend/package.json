@@ -1,0 +1,13 @@
+{
+  "name": "skillswap-backend",
+  "version": "1.0.0",
+  "description": "Backend for SkillSwap Application",
+  "scripts": {
+    "start": "mvnw spring-boot:run",
+    "build": "mvnw clean compile",
+    "test": "mvnw test"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 
