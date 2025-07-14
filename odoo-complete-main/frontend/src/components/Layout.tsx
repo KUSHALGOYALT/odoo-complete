@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { Home, Users, MessageCircle, Bell, Settings, User, Shield, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import NotificationSystem from './NotificationSystem';
+import AdminPanel from './AdminPanel';
 
 interface LayoutProps {
   onLogout: () => void;
@@ -11,7 +13,40 @@ interface LayoutProps {
 
 const Layout = ({ onLogout }: LayoutProps) => {
   const location = useLocation();
-  const [isAdmin] = useState(false); // This would come from auth context
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  // Check if user is admin
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch('http://localhost:8091/api/users/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (response.ok) {
+          const profile = await response.json();
+          setUserProfile(profile);
+          setIsAdmin(profile.roles?.includes('ADMIN') || false);
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+      }
+    };
+
+    checkAdminStatus();
+  }, []);
+
+  // Show only AdminPanel for admins on / and /admin
+  if (isAdmin && (location.pathname === '/' || location.pathname === '/admin')) {
+    return <AdminPanel />;
+  }
   
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
@@ -19,6 +54,7 @@ const Layout = ({ onLogout }: LayoutProps) => {
     { path: '/chats', icon: MessageCircle, label: 'Chats' },
     { path: '/notifications', icon: Bell, label: 'Alerts' },
     { path: '/profile', icon: User, label: 'Profile' },
+    { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   if (isAdmin) {
@@ -94,6 +130,17 @@ const Layout = ({ onLogout }: LayoutProps) => {
 
       {/* Main Content */}
       <main className="md:ml-64 pb-20 md:pb-0">
+        {/* Header with notifications */}
+        <div className="bg-white border-b border-gray-200 p-4 flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {navItems.find(item => isActive(item.path))?.label || 'Dashboard'}
+          </h2>
+          <div className="flex items-center gap-4">
+            <Link to="/notifications">
+              <Bell size={24} className="text-gray-600 hover:text-[#875A7B] cursor-pointer" />
+            </Link>
+          </div>
+        </div>
         <Outlet />
       </main>
     </div>

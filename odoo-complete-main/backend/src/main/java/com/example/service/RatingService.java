@@ -1,5 +1,10 @@
 package com.example.service;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.example.dto.RatingDto;
 import com.example.exception.BadRequestException;
 import com.example.model.Rating;
@@ -7,10 +12,6 @@ import com.example.model.SwapRequest;
 import com.example.model.SwapStatus;
 import com.example.model.User;
 import com.example.repository.RatingRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class RatingService {
@@ -23,6 +24,9 @@ public class RatingService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private BadgeService badgeService;
 
     public Rating createRating(String raterId, RatingDto ratingDto) {
         User rater = userService.findById(raterId);
@@ -50,6 +54,10 @@ public class RatingService {
 
         Rating saved = ratingRepository.save(rating);
         updateUserRating(rated);
+        
+        // Check for badges after rating is created
+        badgeService.checkAndAwardBadges(rated.getId());
+        
         return saved;
     }
 

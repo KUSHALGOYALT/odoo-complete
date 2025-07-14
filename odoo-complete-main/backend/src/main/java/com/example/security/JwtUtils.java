@@ -10,6 +10,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.stream.Collectors;
+import java.util.List;
 
 @Component
 public class JwtUtils {
@@ -23,10 +25,13 @@ public class JwtUtils {
 
     public String generateJwtToken(Authentication authentication) {
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-
+        List<String> roles = userPrincipal.getAuthorities().stream()
+            .map(auth -> auth.getAuthority().replace("ROLE_", ""))
+            .collect(Collectors.toList());
         return Jwts.builder()
                 .setSubject(userPrincipal.getUsername())
                 .claim("userId", userPrincipal.getId())
+                .claim("roles", roles)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)

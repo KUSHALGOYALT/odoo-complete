@@ -50,7 +50,11 @@ const Login = ({ onLogin }: LoginProps) => {
     onSuccess: (data) => {
       if (data.success) {
         localStorage.setItem("token", data.data.token);
-        localStorage.setItem("userId", data.data.user.id);
+        // Store MongoDB user ID for chat/swap features
+        const userId = data.data.user?.id || data.data.profile?.id;
+        if (userId) {
+          localStorage.setItem("userId", userId);
+        }
         toast.success(data.message);
         onLogin();
       } else {
@@ -93,7 +97,11 @@ const Login = ({ onLogin }: LoginProps) => {
     onSuccess: (data) => {
       if (data.success) {
         localStorage.setItem("token", data.data.token);
-        localStorage.setItem("userId", data.data.user.id);
+        // Store MongoDB user ID for chat/swap features
+        const userId = data.data.user?.id || data.data.profile?.id;
+        if (userId) {
+          localStorage.setItem("userId", userId);
+        }
         toast.success(data.message);
         onLogin();
       } else {
@@ -414,10 +422,10 @@ const Login = ({ onLogin }: LoginProps) => {
             <Button
               onClick={handleSignupSubmit}
               className="w-full bg-[#875A7B] hover:bg-[#714B67] text-white"
-              disabled={registerMutation.isLoading}
+              disabled={registerMutation.status === "pending"}
             >
               {onboardingStep === 2
-                ? registerMutation.isLoading
+                ? registerMutation.status === "pending"
                   ? "Creating Account..."
                   : "Complete Setup"
                 : "Continue"}
@@ -503,9 +511,9 @@ const Login = ({ onLogin }: LoginProps) => {
                   <Button
                     type="submit"
                     className="w-full bg-[#875A7B] hover:bg-[#714B67] text-white"
-                    disabled={loginMutation.isLoading}
+                    disabled={loginMutation.status === "pending"}
                   >
-                    {loginMutation.isLoading ? "Signing In..." : "Sign In"}
+                    {loginMutation.status === "pending" ? "Signing In..." : "Sign In"}
                   </Button>
                 </form>
                 <div className="relative">
@@ -560,9 +568,9 @@ const Login = ({ onLogin }: LoginProps) => {
                   <Button
                     type="submit"
                     className="w-full bg-[#875A7B] hover:bg-[#714B67] text-white"
-                    disabled={registerMutation.isLoading}
+                    disabled={registerMutation.status === "pending"}
                   >
-                    {registerMutation.isLoading ? "Creating Account..." : "Create Account"}
+                    {registerMutation.status === "pending" ? "Creating Account..." : "Create Account"}
                   </Button>
                 </form>
                 <div className="relative">

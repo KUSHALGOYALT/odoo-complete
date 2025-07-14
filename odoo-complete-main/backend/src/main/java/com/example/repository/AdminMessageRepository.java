@@ -11,4 +11,5 @@ import com.example.model.AdminMessage;
 public interface AdminMessageRepository extends MongoRepository<AdminMessage, String> {
     List<AdminMessage> findByIsActiveTrueOrderByCreatedAtDesc();
     List<AdminMessage> findAllByOrderByCreatedAtDesc();
+    List<AdminMessage> findByTargetUserIdAndIsActiveTrueOrderByCreatedAtDesc(String targetUserId);
 }

@@ -1,13 +1,21 @@
 package com.example.controller;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.example.dto.ApiResponse;
 import com.example.dto.RatingDto;
 import com.example.model.Rating;
 import com.example.service.RatingService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import com.example.service.UserPrincipal;
 
 @RestController
 @RequestMapping("/api/ratings")
@@ -32,6 +40,17 @@ public class RatingController {
     public ApiResponse<List<Rating>> getUserRatings(@PathVariable String userId) {
         try {
             List<Rating> ratings = ratingService.getUserRatings(userId);
+            return ApiResponse.success(ratings, "User ratings fetched successfully");
+        } catch (Exception e) {
+            return ApiResponse.failure("Failed to fetch ratings: " + e.getMessage());
+        }
+    }
+
+    // Get ratings for the authenticated user
+    @GetMapping("/user")
+    public ApiResponse<List<Rating>> getCurrentUserRatings(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        try {
+            List<Rating> ratings = ratingService.getUserRatings(userPrincipal.getId());
             return ApiResponse.success(ratings, "User ratings fetched successfully");
         } catch (Exception e) {
             return ApiResponse.failure("Failed to fetch ratings: " + e.getMessage());

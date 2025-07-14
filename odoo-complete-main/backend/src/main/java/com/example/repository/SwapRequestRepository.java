@@ -26,6 +26,8 @@ public interface SwapRequestRepository extends MongoRepository<SwapRequest, Stri
     long countByStatus(String status);
 
     List<SwapRequest> findByRequesterIdAndStatus(String requesterId, SwapStatus status);
+    
+    List<SwapRequest> findByStatus(SwapStatus status);
 }
 
 

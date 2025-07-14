@@ -28,6 +28,9 @@ public class UserService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private BadgeService badgeService;
+
     public User registerUser(UserRegistrationDto registrationDto) {
         if (userRepository.existsByUsername(registrationDto.getUsername())) {
             throw new BadRequestException("Username is already taken");
@@ -168,6 +171,9 @@ public class UserService {
         User user = findById(userId);
         user.getStats().setProfileViews(user.getStats().getProfileViews() + 1);
         userRepository.save(user);
+        
+        // Check for badges after profile view increment
+        badgeService.checkAndAwardBadges(userId);
     }
 
     public void validateSkills(List<Skill> offeredSkills, List<String> wantedSkills) {
@@ -200,6 +206,7 @@ public class UserService {
         dto.setOfferedSkills(user.getOfferedSkills());
         dto.setWantedSkills(user.getWantedSkills());
         dto.setAvailability(user.getAvailability());
+        dto.setRoles(user.getRoles()); // <-- Add this line
         ProfileStats stats = user.getStats();
         if (matchPercentage != null) {
             stats.setMatchPercentage(matchPercentage);

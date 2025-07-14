@@ -17,7 +17,7 @@ public class AdminMessage {
 
     private String content;
 
-    private String type; // INFO, WARNING, ANNOUNCEMENT
+    private String type; // INFO, WARNING, ANNOUNCEMENT, BROADCAST, PERSONAL
 
     @DBRef
     private User createdBy;
@@ -25,6 +25,8 @@ public class AdminMessage {
     private LocalDateTime createdAt;
 
     private boolean isActive = true; // Default to true for new messages
+    
+    private String targetUserId; // For personal messages to specific users
 
     // Constructors
     public AdminMessage() {
@@ -62,4 +64,7 @@ public class AdminMessage {
 
     public boolean isActive() { return isActive; }
     public void setActive(boolean isActive) { this.isActive = isActive; }
+    
+    public String getTargetUserId() { return targetUserId; }
+    public void setTargetUserId(String targetUserId) { this.targetUserId = targetUserId; }
 }

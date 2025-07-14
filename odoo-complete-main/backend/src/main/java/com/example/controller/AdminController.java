@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,14 +15,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.dto.AdminDashboardStats;
-import com.example.dto.AdminMessageDto;
 import com.example.dto.ApiResponse;
-import com.example.model.AdminMessage;
+import com.example.dto.FlaggedSkillDto;
+import com.example.dto.PlatformAnnouncementDto;
+import com.example.dto.UserBanDto;
+import com.example.model.FlaggedSkill;
+import com.example.model.PlatformAnnouncement;
 import com.example.model.SwapRequest;
-import com.example.model.User;
+import com.example.model.UserBan;
 import com.example.service.AdminService;
 import com.example.service.UserPrincipal;
 
@@ -35,98 +39,201 @@ public class AdminController {
     @Autowired
     private AdminService adminService;
 
+    // ========================
+    // DASHBOARD STATISTICS
+    // ========================
+    
     @GetMapping("/dashboard/stats")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<AdminDashboardStats> getDashboardStats() {
-        AdminDashboardStats stats = adminService.getDashboardStats();
+    public ResponseEntity<Map<String, Object>> getDashboardStats() {
+        Map<String, Object> stats = adminService.getDashboardStats();
         return ResponseEntity.ok(stats);
     }
 
-    @GetMapping("/users")
+    // ========================
+    // FLAGGED SKILLS MANAGEMENT
+    // ========================
+    
+    @GetMapping("/flagged-skills")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = adminService.getAllUsers();
-        return ResponseEntity.ok(users);
+    public ResponseEntity<List<FlaggedSkill>> getFlaggedSkills(
+            @RequestParam(required = false) String status) {
+        List<FlaggedSkill> flaggedSkills;
+        if (status != null) {
+            flaggedSkills = adminService.getFlaggedSkillsByStatus(status);
+        } else {
+            flaggedSkills = adminService.getFlaggedSkills();
+        }
+        return ResponseEntity.ok(flaggedSkills);
     }
 
+    @PostMapping("/flagged-skills")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<FlaggedSkill>> flagSkill(
+            @Valid @RequestBody FlaggedSkillDto flaggedSkillDto) {
+        FlaggedSkill flaggedSkill = adminService.flagSkill(flaggedSkillDto);
+        return ResponseEntity.ok(ApiResponse.success(flaggedSkill, "Skill flagged successfully"));
+    }
+
+    @PutMapping("/flagged-skills/{flaggedSkillId}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<FlaggedSkill>> approveSkill(
+            @PathVariable String flaggedSkillId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam(required = false, defaultValue = "") String reviewNotes) {
+        FlaggedSkill flaggedSkill = adminService.approveSkill(flaggedSkillId, userPrincipal.getId(), reviewNotes);
+        return ResponseEntity.ok(ApiResponse.success(flaggedSkill, "Skill approved successfully"));
+    }
+
+    @PutMapping("/flagged-skills/{flaggedSkillId}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<FlaggedSkill>> rejectSkill(
+            @PathVariable String flaggedSkillId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam(required = false, defaultValue = "") String reviewNotes) {
+        FlaggedSkill flaggedSkill = adminService.rejectSkill(flaggedSkillId, userPrincipal.getId(), reviewNotes);
+        return ResponseEntity.ok(ApiResponse.success(flaggedSkill, "Skill rejected successfully"));
+    }
+
+    // ========================
+    // USER BAN MANAGEMENT
+    // ========================
+    
+    @PostMapping("/users/ban")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserBan>> banUser(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @Valid @RequestBody UserBanDto banDto) {
+        UserBan userBan = adminService.banUser(banDto, userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.success(userBan, "User banned successfully"));
+    }
+
+    @PostMapping("/users/{userId}/unban")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<UserBan>> unbanUser(
+            @PathVariable String userId,
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam(required = false, defaultValue = "Admin decision") String unbanReason) {
+        UserBan userBan = adminService.unbanUser(userId, userPrincipal.getId(), unbanReason);
+        return ResponseEntity.ok(ApiResponse.success(userBan, "User unbanned successfully"));
+    }
+
+    @GetMapping("/users/bans/active")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserBan>> getActiveBans() {
+        List<UserBan> activeBans = adminService.getActiveBans();
+        return ResponseEntity.ok(activeBans);
+    }
+
+    @GetMapping("/users/{userId}/bans")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserBan>> getUserBanHistory(@PathVariable String userId) {
+        List<UserBan> banHistory = adminService.getBanHistory(userId);
+        return ResponseEntity.ok(banHistory);
+    }
+
+    @GetMapping("/users/bans/history")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserBan>> getAllBanHistory() {
+        List<UserBan> allBanHistory = adminService.getAllBanHistory();
+        return ResponseEntity.ok(allBanHistory);
+    }
+
+    // ========================
+    // SWAP MONITORING
+    // ========================
+    
     @GetMapping("/swaps")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<SwapRequest>> getAllSwapRequests() {
-        List<SwapRequest> swaps = adminService.getAllSwapRequests();
+    public ResponseEntity<List<SwapRequest>> getAllSwaps(
+            @RequestParam(required = false) String status) {
+        List<SwapRequest> swaps;
+        if (status != null) {
+            swaps = adminService.getSwapsByStatus(status);
+        } else {
+            swaps = adminService.getAllSwaps();
+        }
         return ResponseEntity.ok(swaps);
     }
 
-    @PutMapping("/users/{userId}/ban")
+    @GetMapping("/swaps/stats")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> banUser(@PathVariable String userId) {
-        User bannedUser = adminService.banUser(userId);
-        return ResponseEntity.ok(new ApiResponse(true, "User banned successfully"));
+    public ResponseEntity<Map<String, Object>> getSwapStatistics() {
+        Map<String, Object> stats = adminService.getSwapStatistics();
+        return ResponseEntity.ok(stats);
     }
 
-    @PutMapping("/users/{userId}/unban")
+    // ========================
+    // PLATFORM ANNOUNCEMENTS
+    // ========================
+    
+    @PostMapping("/announcements")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> unbanUser(@PathVariable String userId) {
-        User unbannedUser = adminService.unbanUser(userId);
-        return ResponseEntity.ok(new ApiResponse(true, "User unbanned successfully"));
-    }
-
-    @PostMapping("/messages")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> sendPlatformMessage(
+    public ResponseEntity<ApiResponse<PlatformAnnouncement>> createAnnouncement(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @Valid @RequestBody AdminMessageDto messageDto) {
-        AdminMessage message = adminService.sendPlatformMessage(userPrincipal.getId(), messageDto);
-        return ResponseEntity.ok(new ApiResponse(true, "Message sent successfully"));
+            @Valid @RequestBody PlatformAnnouncementDto announcementDto) {
+        PlatformAnnouncement announcement = adminService.createAnnouncement(announcementDto, userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.success(announcement, "Announcement created successfully"));
     }
 
-    @GetMapping("/messages")
+    @GetMapping("/announcements")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<AdminMessage>> getAllPlatformMessages() {
-        List<AdminMessage> messages = adminService.getAllPlatformMessages();
-        return ResponseEntity.ok(messages);
+    public ResponseEntity<List<PlatformAnnouncement>> getAnnouncements(
+            @RequestParam(required = false, defaultValue = "false") boolean activeOnly) {
+        List<PlatformAnnouncement> announcements;
+        if (activeOnly) {
+            announcements = adminService.getActiveAnnouncements();
+        } else {
+            announcements = adminService.getAllAnnouncements();
+        }
+        return ResponseEntity.ok(announcements);
     }
 
-    @GetMapping("/messages/active")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<AdminMessage>> getActivePlatformMessages() {
-        List<AdminMessage> messages = adminService.getActivePlatformMessages();
-        return ResponseEntity.ok(messages);
+    // Public endpoint for users to get active announcements
+    @GetMapping("/announcements/public")
+    public ResponseEntity<List<PlatformAnnouncement>> getPublicAnnouncements() {
+        List<PlatformAnnouncement> announcements = adminService.getActiveAnnouncements();
+        return ResponseEntity.ok(announcements);
     }
 
-    @PutMapping("/messages/{messageId}/deactivate")
+    @PutMapping("/announcements/{announcementId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> deactivateMessage(@PathVariable String messageId) {
-        adminService.deactivateMessage(messageId);
-        return ResponseEntity.ok(new ApiResponse(true, "Message deactivated successfully"));
+    public ResponseEntity<ApiResponse<PlatformAnnouncement>> updateAnnouncement(
+            @PathVariable String announcementId,
+            @Valid @RequestBody PlatformAnnouncementDto announcementDto) {
+        PlatformAnnouncement announcement = adminService.updateAnnouncement(announcementId, announcementDto);
+        return ResponseEntity.ok(ApiResponse.success(announcement, "Announcement updated successfully"));
     }
 
-    @DeleteMapping("/swaps/{swapId}")
+    @DeleteMapping("/announcements/{announcementId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> deleteSwapRequest(@PathVariable String swapId) {
-        adminService.deleteSwapRequest(swapId);
-        return ResponseEntity.ok(new ApiResponse(true, "Swap request deleted successfully"));
+    public ResponseEntity<ApiResponse<String>> deactivateAnnouncement(@PathVariable String announcementId) {
+        adminService.deactivateAnnouncement(announcementId);
+        return ResponseEntity.ok(ApiResponse.success("Announcement deactivated successfully"));
     }
 
-    @PutMapping("/users/{userId}/make-admin")
+    // ========================
+    // REPORTS GENERATION
+    // ========================
+    
+    @GetMapping("/reports/user-activity")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> makeUserAdmin(@PathVariable String userId) {
-        User adminUser = adminService.makeUserAdmin(userId);
-        return ResponseEntity.ok(new ApiResponse(true, "User promoted to admin successfully"));
+    public ResponseEntity<Map<String, Object>> getUserActivityReport() {
+        Map<String, Object> report = adminService.generateUserActivityReport();
+        return ResponseEntity.ok(report);
     }
 
-    @PutMapping("/users/{userId}/remove-admin")
+    @GetMapping("/reports/swap-stats")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> removeAdminRole(@PathVariable String userId) {
-        User user = adminService.removeAdminRole(userId);
-        return ResponseEntity.ok(new ApiResponse(true, "Admin role removed successfully"));
+    public ResponseEntity<Map<String, Object>> getSwapStatsReport() {
+        Map<String, Object> report = adminService.generateSwapStatsReport();
+        return ResponseEntity.ok(report);
     }
 
-    @DeleteMapping("/users/{userId}/skills/{skillName}")
+    @GetMapping("/reports/feedback")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse> rejectSkill(
-            @PathVariable String userId,
-            @PathVariable String skillName) {
-        adminService.rejectSkill(userId, skillName);
-        return ResponseEntity.ok(new ApiResponse(true, "Skill rejected successfully"));
+    public ResponseEntity<Map<String, Object>> getFeedbackReport() {
+        Map<String, Object> report = adminService.generateFeedbackReport();
+        return ResponseEntity.ok(report);
     }
 }

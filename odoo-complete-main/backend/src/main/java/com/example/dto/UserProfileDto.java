@@ -18,6 +18,7 @@ public class UserProfileDto {
     private List<String> wantedSkills;
     private String availability;
     private ProfileStats stats;
+    private List<String> roles;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -54,4 +55,7 @@ public class UserProfileDto {
 
     public ProfileStats getStats() { return stats; }
     public void setStats(ProfileStats stats) { this.stats = stats; }
+
+    public List<String> getRoles() { return roles; }
+    public void setRoles(List<String> roles) { this.roles = roles; }
 }

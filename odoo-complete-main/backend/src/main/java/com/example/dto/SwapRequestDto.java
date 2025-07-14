@@ -1,9 +1,11 @@
 package com.example.dto;
 
+import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-
-import java.time.LocalDateTime;
 
 public class SwapRequestDto {
     @NotBlank(message = "Requested user ID is required")
@@ -19,6 +21,7 @@ public class SwapRequestDto {
     @Size(max = 500, message = "Message must not exceed 500 characters")
     private String message;
 
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
     private LocalDateTime deadline;
     private boolean isSuperSwap = false;
 

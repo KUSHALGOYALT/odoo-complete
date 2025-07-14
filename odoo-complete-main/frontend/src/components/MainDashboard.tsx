@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RefreshCw } from 'lucide-react';
-import AdminDashboard from './Dashboard';
+import AdminPanel from './AdminPanel';
 import UserDashboard from './UserDashboard';
 
 const MainDashboard = () => {
@@ -37,9 +37,11 @@ const MainDashboard = () => {
 
       if (response.ok) {
         const profile = await response.json();
+        console.log('User profile:', profile); // DEBUG LOG
         // Check if user has admin role
         const isAdmin = profile.roles && profile.roles.includes('ADMIN');
         setUserRole(isAdmin ? 'ADMIN' : 'USER');
+        console.log('Detected userRole:', isAdmin ? 'ADMIN' : 'USER'); // DEBUG LOG
       } else if (response.status === 401) {
         setError('Authentication failed. Please login again.');
         // Redirect to login
@@ -92,7 +94,7 @@ const MainDashboard = () => {
 
   // Render appropriate dashboard based on user role
   if (userRole === 'ADMIN') {
-    return <AdminDashboard />;
+    return <AdminPanel />;
   } else {
     return <UserDashboard />;
   }
