@@ -1054,7 +1054,7 @@ const UserDashboard = () => {
                 userProfile={userProfile}
                 onRatingSubmitted={() => {
                   fetchRatings();
-                  fetchUserStats();
+                  fetchUserSwaps();
                 }}
               />
             </div>
